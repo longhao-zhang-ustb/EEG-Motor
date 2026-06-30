@@ -27,6 +27,12 @@ if __name__ == '__main__':
         data_format='auto'
     )
     
+    # 显示脑电数据
+    # data = raw.get_data()
+    # print(data.shape)  # 例如: (64, 1000000) 表示64个通道，100万个采样点
+    # print(data)        # 打印整个数据矩阵（如果数据太大，只会显示一部分）
+    # exit()
+    
     # 设置电极位置
     montage = mne.channels.make_standard_montage('standard_1020')
     channel_rename = {
@@ -94,12 +100,14 @@ if __name__ == '__main__':
     }
     indices = [raw.ch_names.index(ch) for ch in channels_array]
     # 计算每个通道的功率谱密度
-    psds, freqs = mne.time_frequency.psd_array_welch(
+    # t, f = mne.time_frequency.psd_array_welch()
+    psds, freqs = mne.time_frequency.psd_array_multitaper(
         sig,
         sfreq = raw.info['sfreq'],
         fmin=0.5,
         fmax=80
     )
+    psds = psds / int(raw.info['sfreq'])
     band_data = []
     band_names = []
     for band, (fmin, fmax) in BANDS.items():
@@ -120,7 +128,7 @@ if __name__ == '__main__':
     
     for ax, data, name in zip(axes, band_data, band_names):
         im, _ = mne.viz.plot_topomap(
-            data,
+            data * 1e12,
             pos=pos_array,
             # names=name,
             axes=ax,
@@ -128,15 +136,17 @@ if __name__ == '__main__':
             show=False
         )
         # 设置标题
-        ax.set_title(name, fontsize=14)
+        ax.set_title(name, fontsize=20)
     
     # 统一色条
     # 这个参数专门给色条预留空间，彻底解决显示不全！
     plt.subplots_adjust(right=0.88)
     # 设置色条位置在最后一个子图
-    cax = fig.add_axes([0.9, 0.35, 0.005, 0.2])  # [左, 下, 宽, 高]
+    # cax = fig.add_axes([0.9, 0.35, 0.005, 0.2])  # [左, 下, 宽, 高]
+    cax = fig.add_axes([0.9, 0.29, 0.008, 0.4])
     cbar = fig.colorbar(im, cax=cax)
-    cbar.set_label('Power (µV²/Hz)', fontsize=14)
+    cbar.set_label('PSD (µV²/Hz)', fontsize=18)
+    cbar.ax.tick_params(labelsize=16)
     # plt.show()
     # 保存图片，dpi=300
     plt.savefig(r'paper_figures\\eeg_signal_power_spectrum_label0.tif', dpi=300)
