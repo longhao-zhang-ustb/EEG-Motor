@@ -15,6 +15,11 @@ plt.rcParams['font.sans-serif'] = ['Times New Roman']
 
 if __name__ == '__main__':
     df = pd.read_csv(r'eeg_features_20260415_80hz_1s.csv')
+    # 计算的eeg中psd和正常psd差sfreq倍，需要除掉进行功率谱密度的标准化
+    sfreq = 250 # 原始数据采样频率
+    for col in df.columns:
+        if 'psd' in col:
+            df[col] /= sfreq
     # 需要调整的变量
     ###################################
     seed = 42
